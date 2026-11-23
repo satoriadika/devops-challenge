@@ -19,6 +19,12 @@ If the base is adel-almasabi/devops-challenge, you are on the wrong repo — clo
 
 <!-- Commands, tests, reasoning. No AWS account is expected. -->
 
+## If this changes production (`live/`, `modules/`, `apps/acme-prod-cluster/`)
+
+- [ ] I read the `terragrunt plan` / `helmfile diff` output and it shows only what I expect.
+- [ ] It was applied to dev first, and I checked it there.
+- [ ] I know how to roll it back (revert the commit and apply again, or turn the old setting back on).
+
 ## AI use
 
 <!-- What you used, for which parts, and what you changed afterwards. "None" is fine. -->

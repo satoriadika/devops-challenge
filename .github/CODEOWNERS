@@ -1,0 +1,6 @@
+# Changes to infrastructure and to prod apps need a review from the platform owner.
+# Enforced when branch protection on main has "Require review from Code Owners" turned on.
+/live/                          @satoriadika
+/modules/                       @satoriadika
+/apps/acme-prod-cluster/        @satoriadika
+/.github/                       @satoriadika
