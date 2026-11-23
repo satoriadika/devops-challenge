@@ -15,25 +15,32 @@ smaller in reality. GuardDuty findings below are the sample findings in `modules
 | 6 | Prod runs `latest` and the claims team deploys by pushing to ECR and restarting | `apps/acme-prod-cluster/values/claims-worker.yaml`; `docs/claims-worker.md` | No way to know or roll back to the previous version, and no review of prod changes | 30 days | S |
 | 7 | No backups for the claims database, one AWS account for dev and prod | TODO list in `docs/architecture.md` | One mistake or breach can reach prod data. Losing the database means losing every claim | 90 days | L |
 
-Already handled in this PR: the alarm that nobody received (task 02) and the unsafe bucket defaults (task 03).
+Already handled in this branch: the alarm that nobody received (task 02) and the unsafe bucket defaults (task 03).
 
-## 2. What I fix first, and why
+## 2. What I fixed first, and why
 
-I pick risks 1 and 2 because they are small to fix, and they are the ones where an attacker may already be active.
+I picked risks 1 and 2 because they are small to fix, and they are the ones where an attacker may already be active.
 
-- **Risk 2 (code, next):** make the GuardDuty Lambda accept any finding type (build the message from the fields that exist, no
-  `instanceDetails` for IAM and S3), and check that a Slack error fails loudly. Test with the three sample findings.
-- **Risk 1 (needs a person):** rotate the keys. First ask who uses `claims-reports-uploader` (I asked Rina in the task 03 reply). Then replace the user
-  with a role, disable the old key for a day to see what breaks, then delete it.
+- **Risk 2, GuardDuty Lambda (done in code, commit `218d546`):** `buildMessage` read `instanceDetails.instanceId`, which
+  only exists on EC2 findings, so IAM and S3 findings threw a `TypeError` and never reached Slack. The message is now
+  built from the fields that exist, and a Slack error now fails the invocation. 4 tests pass, including the IAM and S3
+  samples. Not tested: a real send to Slack.
+- **Risk 1, `claims-reports-uploader` key (done in code, commit `54a7713`, not applied):** the key is set to `Inactive`
+  in prod (`access_key_status` in `modules/iam-user`). It is turned off, not deleted, so it can be turned back on. I asked
+  Rina who uses it (question 5 in my task 03 reply, marked urgent). After a day with no complaints I delete the key and
+  replace the user with a role.
 
-**Rollout for prod:** run `terragrunt plan` and `helmfile diff` first and read them. Apply to dev, check, then prod, one change at a time.
-Disable a key before deleting it, so it can be turned back on. Revert the commit and apply again to roll back.
+**Rollout for prod:** run `terragrunt plan` and `helmfile diff` first and read them. Apply to dev, check, then prod, one
+change at a time. For the key, the plan must show exactly one change (`Active` to `Inactive`). Tell the security team
+before the Lambda fix goes to prod, because older IAM and S3 findings may start to appear in Slack. Roll back by reverting
+the commit and applying again. A disabled key can be turned back on.
 
 ## 3. First 90 days
 
-- **Days 1-30:** rotate the reports keys, fix the GuardDuty Lambda, move the database password out of plain text,
-  correct the docs, and ask the claims team who deploys what.
-- **Days 31-60:** least privilege on the prod worker role, pinned image tags, alarms for crashing pods and the dead-letter
-  queue, and alerts to a Slack channel.
-- **Days 61-90:** apply from CI with review (see task 04) and a record of who changed prod, backups for the claims
-  database (and a restore test), and a plan to separate prod into its own account.
+- **Days 1-30:** apply the key deactivation and the Lambda fix (dev, then prod), tell the security team, delete the key
+  and replace the user with a role, rotate the database password and move it out of plain text (it is already in git
+  history), and correct the docs.
+- **Days 31-60:** least privilege on the prod worker role (it can reach every queue, dev included), pinned image tags,
+  alarms for crashing pods and the dead-letter queue, alerts to a Slack channel, and ask the claims team who deploys what.
+- **Days 61-90:** apply from CI with review and a record of who changed prod (see `task-04-design-notes.md`), backups for
+  the claims database with a restore test, and a plan to separate prod into its own AWS account.
