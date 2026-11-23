@@ -38,6 +38,8 @@ Prod comes after you have tested dev.
 3. Does the app upload straight to S3 with an upload link, or send the file through the backend?
 4. Which file types and what maximum size should we allow?
 5. Does anyone use the existing `claims-reports-uploader` keys? I want to rotate them, and I need to know what
-   would stop working.
+   would stop working. **This one is urgent, please answer today.** GuardDuty shows unusual access to the reports
+   bucket with this key, so I may need to switch it off before I hear from you. If a report job breaks, tell me and
+   I can turn the key back on.
 
 Thanks!
