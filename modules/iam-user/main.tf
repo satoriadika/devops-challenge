@@ -5,7 +5,8 @@ resource "aws_iam_user" "this" {
 }
 
 resource "aws_iam_access_key" "this" {
-  user = aws_iam_user.this.name
+  user   = aws_iam_user.this.name
+  status = var.access_key_status
 }
 
 data "aws_iam_policy_document" "bucket" {
